@@ -53,9 +53,9 @@ async function checkProduct() {
 console.log('Bot started...');
 
 //Check every 2 minutes
-// cron.schedule("*/2 * * * *", () => {
-//   checkProduct();
-// });
+cron.schedule("*/2 * * * *", () => {
+  checkProduct();
+});
 
 // Run immediately once
 checkProduct();
