@@ -13,8 +13,8 @@ let alreadyNotified = false;
 async function checkProduct() {
   try {
     console.log('Checking product...');
-    const response = await axios.get(PRODUCT_URL, {
-    // const response = await axios.get(PRODUCT_URL_TEST, {
+    // const response = await axios.get(PRODUCT_URL, {
+    const response = await axios.get(PRODUCT_URL_TEST, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
       },
@@ -22,27 +22,27 @@ async function checkProduct() {
 
     const $ = cheerio.load(response.data);
 
-    //Check for in-stock button
     const inStock = $('a.update_cart_product').length > 0;
 
     if (inStock) {
       console.log('Product is IN STOCK');
 
-      if (!alreadyNotified) {
+    //   if (!alreadyNotified) {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: CHAT_ID,
-          text: `🔥 Product Available!\n${PRODUCT_URL}`,
+          text: `🔥 Product Available Test!\n${PRODUCT_URL}`,
+        //   text: `🔥 Product Available!\n${PRODUCT_URL}`,
         });
 
         console.log('Telegram alert sent');
         alreadyNotified = true;
-      }
+    //   }
     } else {
       console.log('Still out of stock');
       alreadyNotified = false; // reset so next stock triggers again
     }
   } catch (error) {
-    // console.error("Error:", error.message);
+    console.error("Error:", error.message);
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       chat_id: CHAT_ID,
       text: `Error! \n${error.message}`,
