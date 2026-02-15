@@ -3,10 +3,10 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cron = require('node-cron');
 
-const BOT_TOKEN = process.env.BOT_TOKEN.trim();
-const CHAT_ID = process.env.CHAT_ID.trim();
-const PRODUCT_URL = process.env.PRODUCT_URL.trim();
-const PRODUCT_URL_TEST = process.env.PRODUCT_URL_TEST.trim();
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
+const PRODUCT_URL = process.env.PRODUCT_URL;
+const PRODUCT_URL_TEST = process.env.PRODUCT_URL_TEST;
 
 let alreadyNotified = false;
 
