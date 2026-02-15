@@ -13,8 +13,8 @@ let alreadyNotified = false;
 async function checkProduct() {
   try {
     console.log('Checking product...');
-    // const response = await axios.get(PRODUCT_URL_TEST, {
-    const response = await axios.get(PRODUCT_URL, {
+    const response = await axios.get(PRODUCT_URL_TEST, {
+    // const response = await axios.get(PRODUCT_URL, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
       },
