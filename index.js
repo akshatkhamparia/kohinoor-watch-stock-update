@@ -31,13 +31,21 @@ async function checkProduct() {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: CHAT_ID,
         //   text: `🔥 Product Available Test!\n${PRODUCT_URL}`,
-          text: `🔥 Product Available!\n${PRODUCT_URL}`,
+          text: `🔥 Watch Available!\n${PRODUCT_URL}`,
         });
 
         console.log('Telegram alert sent');
         alreadyNotified = true;
       }
     } else {
+      if (alreadyNotified){
+        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          chat_id: CHAT_ID,
+          text: `Watch Out of stock now!\n${PRODUCT_URL}`,
+        });
+
+        console.log('Telegram alert sent');
+      }
       console.log('Still out of stock');
       alreadyNotified = false; // reset so next stock triggers again
     }
