@@ -14,7 +14,7 @@ async function checkProduct() {
   try {
     console.log('Checking product...');
     // const response = await axios.get(PRODUCT_URL, {
-    const response = await axios.get(PRODUCT_URL_TEST, {
+    const response = await axios.get(PRODUCT_URL, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
       },
@@ -27,16 +27,16 @@ async function checkProduct() {
     if (inStock) {
       console.log('Product is IN STOCK');
 
-    //   if (!alreadyNotified) {
+      if (!alreadyNotified) {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: CHAT_ID,
-          text: `🔥 Product Available Test!\n${PRODUCT_URL}`,
-        //   text: `🔥 Product Available!\n${PRODUCT_URL}`,
+        //   text: `🔥 Product Available Test!\n${PRODUCT_URL}`,
+          text: `🔥 Product Available!\n${PRODUCT_URL}`,
         });
 
         console.log('Telegram alert sent');
         alreadyNotified = true;
-    //   }
+      }
     } else {
       console.log('Still out of stock');
       alreadyNotified = false; // reset so next stock triggers again
