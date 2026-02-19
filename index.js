@@ -86,7 +86,7 @@ async function checkProduct(product) {
 console.log('Bot started...');
 
 // Create separate cron job for each product
-PRODUCT_URLS2.forEach((product) => {
+PRODUCT_URLS.forEach((product) => {
   const job = cron.schedule('*/2 * * * *', () => {
     checkProduct(product);
   });
