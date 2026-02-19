@@ -5,19 +5,34 @@ const cron = require('node-cron');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
-const PRODUCT_URL = process.env.PRODUCT_URL;
-const PRODUCT_URL_TEST = process.env.PRODUCT_URL_TEST;
+const PRODUCT_URLS = [
+  {
+    name: 'PINK',
+    url: 'https://www.hmtwatches.in/product_all_details?id=eyJpdiI6Im9IRzg3RnliNUMwclBHRkxHVVc1a1E9PSIsInZhbHVlIjoiRnBGTkh0YUprOGpTWk8rbExFNjhnQT09IiwibWFjIjoiNjU0MWM0MDI0MWI4YWU0MmUwYTRlOTdmZmU1YThjNjc3Y2MyN2RkZmE1YzhkNjdlYzVjOWM2ZDdmMWI1ZTE5ZCIsInRhZyI6IiJ9',
+  },
+  {
+    name: 'MAROOOON',
+    url: 'https://www.hmtwatches.in/product_all_details?id=eyJpdiI6IiszN0JRT0E5Vld5bmFyTnlIT0MwT1E9PSIsInZhbHVlIjoiYjdjSE5FUVJwNmNzZHpPaWVSYU1PUT09IiwibWFjIjoiYTFlYzUwZjczYjI2NzExZDAyMDI4NmFlMDBlNjk1NjA0MjU1OWE5OGEwOGU4ODdmZjQwYWMyMDFhNTE5NjVlNCIsInRhZyI6IiJ9',
+  },
+];
+const PRODUCT_URLS2 = [
+  {
+    name: 'TEST1',
+    url: 'https://www.hmtwatches.in/product_all_details?id=eyJpdiI6ImVmR2txTGRObmVXMFJObWxJVk1JWVE9PSIsInZhbHVlIjoiVnV5Ym1MeklxQmdZd1dGRTZ4b25CUT09IiwibWFjIjoiMzZjYmVmYzJiNTYyNDE1NzZiNDAxN2NkNzQ5OWQ1N2I1ZGUwOTZkOGQzZDQyYWZkNjliYTBmOWY5MDZlMjdiMyIsInRhZyI6IiJ9'
+  },
+];
+// Track stock state per product
+const productState = {};
 
-let alreadyNotified = false;
+// Store cron jobs per product
+const productJobs = {};
 
-async function checkProduct() {
+async function checkProduct(product) {
   try {
-    console.log('Checking product...');
-    // const response = await axios.get(PRODUCT_URL_TEST, {
-    const response = await axios.get(PRODUCT_URL, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
+    console.log(`Checking ${product.name}...`);
+
+    const response = await axios.get(product.url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
     });
 
     const $ = cheerio.load(response.data);
@@ -25,57 +40,59 @@ async function checkProduct() {
     const inStock = $('a.update_cart_product').length > 0;
 
     if (inStock) {
-      console.log('Product is IN STOCK');
-
-      if (!alreadyNotified) {
+      if (!productState[product.url]) {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: CHAT_ID,
-        //   text: `🔥 Product Available Test!\n${PRODUCT_URL}`,
-          text: `🔥 Watch Available!\n${PRODUCT_URL}`,
+          text: `🔥 ${product.name} Available!\n${product.url}`,
         });
-
-        console.log('Telegram alert sent');
-        alreadyNotified = true;
+        productState[product.url] = true;
       }
     } else {
-      if (alreadyNotified){
+      if (productState[product.url]) {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: CHAT_ID,
-          text: `Watch Out of stock now!\n${PRODUCT_URL}`,
+          text: `❌ ${product.name} Out of Stock\n${product.url}`,
         });
-
-        console.log('Telegram alert sent');
       }
-      console.log('Still out of stock');
-      alreadyNotified = false; // reset so next stock triggers again
+      productState[product.url] = false;
     }
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error(`Error checking ${product.name}:`, error.message);
+
+    // 🔴 If 404 → Stop cron for that product
+    if (error.response && error.response.status === 404) {
+      console.log(`Stopping cron for ${product.name} (404 detected)`);
+
+      if (productJobs[product.url]) {
+        productJobs[product.url].stop();
+      }
+
+      await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        chat_id: CHAT_ID,
+        text: `🚫 ${product.name} removed (404). Monitoring stopped.`,
+      });
+
+      return;
+    }
+
+    // Other errors
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       chat_id: CHAT_ID,
-      text: `Error! \n${error.message}`,
+      text: `Error checking ${product.name}\n${error.message}`,
     });
   }
 }
 
 console.log('Bot started...');
 
-//Check every 2 minutes
-cron.schedule("*/2 * * * *", () => {
-  checkProduct();
+// Create separate cron job for each product
+PRODUCT_URLS2.forEach((product) => {
+  const job = cron.schedule('*/2 * * * *', () => {
+    checkProduct(product);
+  });
+
+  productJobs[product.url] = job;
+
+  // Run immediately once
+  checkProduct(product);
 });
-
-// Run immediately once
-checkProduct();
-
-//------------------------------------------test bot-------------------------------------
-// async function sendTest() {
-//   await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-//     chat_id: CHAT_ID,
-//     text: "Bot is working!"
-//   });
-
-//   console.log("Message sent");
-// }
-
-// sendTest();
