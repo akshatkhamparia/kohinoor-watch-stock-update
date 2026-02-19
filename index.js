@@ -4,7 +4,7 @@ const cheerio = require('cheerio');
 const cron = require('node-cron');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CHAT_ID = process.env.CHAT_ID;
+const CHAT_IDS = process.env.CHAT_IDS.split(',');
 const PRODUCT_URLS = [
   {
     name: 'PINK',
@@ -27,6 +27,15 @@ const productState = {};
 // Store cron jobs per product
 const productJobs = {};
 
+async function sendMessage(text) {
+  for (const chatId of CHAT_IDS) {
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: chatId.trim(),
+      text,
+    });
+  }
+}
+
 async function checkProduct(product) {
   try {
     console.log(`Checking ${product.name}...`);
@@ -41,18 +50,12 @@ async function checkProduct(product) {
 
     if (inStock) {
       if (!productState[product.url]) {
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          chat_id: CHAT_ID,
-          text: `🔥 ${product.name} Available!\n${product.url}`,
-        });
+        await sendMessage(`🔥 ${product.name} Available!\n${product.url}`);
         productState[product.url] = true;
       }
     } else {
       if (productState[product.url]) {
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          chat_id: CHAT_ID,
-          text: `❌ ${product.name} Out of Stock\n${product.url}`,
-        });
+        await sendMessage(`❌ ${product.name} Out of Stock\n${product.url}`);
       }
       productState[product.url] = false;
     }
@@ -67,26 +70,19 @@ async function checkProduct(product) {
         productJobs[product.url].stop();
       }
 
-      await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        chat_id: CHAT_ID,
-        text: `🚫 ${product.name} removed (404). Monitoring stopped.`,
-      });
-
+      await sendMessage(`🚫 ${product.name} removed (404). Monitoring stopped.`);
       return;
     }
 
     // Other errors
-    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      chat_id: CHAT_ID,
-      text: `Error checking ${product.name}\n${error.message}`,
-    });
+    await sendMessage(`Error checking ${product.name}\n${error.message}`);
   }
 }
 
 console.log('Bot started...');
 
 // Create separate cron job for each product
-PRODUCT_URLS.forEach((product) => {
+PRODUCT_URLS2.forEach((product) => {
   const job = cron.schedule('*/2 * * * *', () => {
     checkProduct(product);
   });
