@@ -50,19 +50,19 @@ async function checkProduct(product) {
 
     if (inStock) {
       if (!productState[product.url]) {
-        await sendMessage(`🔥 ${product.name} Available!\n${product.url}`);
+        await sendMessage(` ${product.name} Available!\n${product.url}`);
         productState[product.url] = true;
       }
     } else {
       if (productState[product.url]) {
-        await sendMessage(`❌ ${product.name} Out of Stock\n${product.url}`);
+        await sendMessage(` ${product.name} Out of Stock\n${product.url}`);
       }
       productState[product.url] = false;
     }
   } catch (error) {
     console.error(`Error checking ${product.name}:`, error.message);
 
-    // 🔴 If 404 → Stop cron for that product
+    // If 404 → Stop cron for that product
     if (error.response && error.response.status === 404) {
       console.log(`Stopping cron for ${product.name} (404 detected)`);
 
@@ -70,7 +70,7 @@ async function checkProduct(product) {
         productJobs[product.url].stop();
       }
 
-      await sendMessage(`🚫 ${product.name} removed (404). Monitoring stopped.`);
+      await sendMessage(` ${product.name} removed (404). Monitoring stopped.`);
       return;
     }
 
